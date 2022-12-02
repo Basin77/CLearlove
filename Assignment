@@ -1,0 +1,33 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+pd.set_option('display.max_colwidth',None)
+
+def extract_lyrics(url):
+    response = requests.get(url)
+    html_string = response.text
+    document = BeautifulSoup(html_string, 'html.parser')
+    cleantitle = document.find('h1').text.replace('lyrics', '').replace('"', '')
+    cleanartist = document.find('h2').text.replace('Lyrics', '')
+    text = document.find('div', attrs = 'col-xs-12 col-lg-8 text-center').text.replace('\\', '').replace('\n', '')
+    string1 = 'Submit Corrections'
+    head, seq, tail = text.partition(string1)
+    lyrics = head
+    _,body = lyrics.split('\r', 1)
+    cleanlyrics = body.replace('\r', ',')
+    return cleantitle,cleanartist, cleanlyrics
+
+def get_csv(urls):
+    list = []
+    for url in urls:
+        list.append(extract_lyrics(url))
+    lrc = pd.DataFrame(list, columns = ['Title','Artist', 'Lyrics'])
+    lrc.to_csv('Lyrics.csv')
+    df = pd.read_csv('Lyrics.csv')
+    return df
+
+urls = ('https://www.azlyrics.com/lyrics/gorillaz/elmanana.html', 
+        'https://www.azlyrics.com/lyrics/daftpunk/ohyeah.html', 
+        'https://www.azlyrics.com/lyrics/whitney/thefalls.html')
+
+get_csv(urls)
